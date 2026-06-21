@@ -23,6 +23,26 @@ export interface Question {
 
 export type Answers = Record<string, string>;
 
+// Context gathered in the pre-quiz onboarding popup. These shape the whole
+// consultation: region drives ingredient availability, sex & pregnancy drive
+// herb safety.
+export type BiologicalSex = "male" | "female" | "prefer-not";
+export type PregnancyStatus =
+  | "not-pregnant"
+  | "pregnant"
+  | "nursing"
+  | "trying";
+
+export interface UserProfile {
+  /** Human-readable country or region, e.g. "Zimbabwe" */
+  region: string;
+  /** Culinary/herbal macro-region the country belongs to, e.g. "Southern Africa" */
+  macroRegion?: string;
+  sex: BiologicalSex;
+  /** Only relevant when sex is female */
+  pregnancy?: PregnancyStatus;
+}
+
 export interface TeaRecommendation {
   name: string;
   herbs: string[];
@@ -56,6 +76,7 @@ export interface RecommendationResult {
 
 export interface RecommendRequestBody {
   answers: Answers;
+  profile: UserProfile;
 }
 
 export interface RecommendApiResponse {

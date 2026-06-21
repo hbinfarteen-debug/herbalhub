@@ -5,17 +5,20 @@ import { SiteHeader } from "@/components/herbal-hub/site-header";
 import { SiteFooter } from "@/components/herbal-hub/site-footer";
 import { Hero } from "@/components/herbal-hub/hero";
 import { HowItWorks } from "@/components/herbal-hub/how-it-works";
+import { OnboardingDialog } from "@/components/herbal-hub/onboarding-dialog";
 import { QuestionnaireWizard } from "@/components/herbal-hub/questionnaire-wizard";
 import { LoadingState } from "@/components/herbal-hub/loading-state";
 import { ResultsDisplay } from "@/components/herbal-hub/results-display";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RotateCcw } from "lucide-react";
-import type { Answers, RecommendationResult } from "@/lib/types";
+import type { Answers, RecommendationResult, UserProfile } from "@/lib/types";
 
 type Stage = "intro" | "questions" | "loading" | "results" | "error";
 
 export default function Home() {
   const [stage, setStage] = useState<Stage>("intro");
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [result, setResult] = useState<RecommendationResult | null>(null);
   const [primaryConcern, setPrimaryConcern] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -23,54 +26,62 @@ export default function Home() {
   const startConsultation = useCallback(() => {
     setResult(null);
     setErrorMsg("");
+    setOnboardingOpen(true);
+  }, []);
+
+  const handleOnboardingComplete = useCallback((p: UserProfile) => {
+    setProfile(p);
     setStage("questions");
-    // Scroll to top for the wizard
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const handleComplete = useCallback(async (answers: Answers) => {
-    setPrimaryConcern(answers.primaryConcern?.trim() || "");
-    setStage("loading");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-    try {
-      const res = await fetch("/api/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`Request failed (${res.status})`);
-      }
-
-      const data = (await res.json()) as {
-        ok: boolean;
-        result?: RecommendationResult;
-        error?: string;
-      };
-
-      if (!data.ok || !data.result) {
-        throw new Error(data.error || "No recommendations returned");
-      }
-
-      setResult(data.result);
-      setStage("results");
+  const handleComplete = useCallback(
+    async (answers: Answers) => {
+      setPrimaryConcern(answers.primaryConcern?.trim() || "");
+      setStage("loading");
       window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (err) {
-      console.error("[herbal-hub] recommend failed:", err);
-      setErrorMsg(
-        err instanceof Error ? err.message : "Something went wrong."
-      );
-      setStage("error");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  }, []);
+
+      try {
+        const res = await fetch("/api/recommend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answers, profile }),
+        });
+
+        if (!res.ok) {
+          throw new Error(`Request failed (${res.status})`);
+        }
+
+        const data = (await res.json()) as {
+          ok: boolean;
+          result?: RecommendationResult;
+          error?: string;
+        };
+
+        if (!data.ok || !data.result) {
+          throw new Error(data.error || "No recommendations returned");
+        }
+
+        setResult(data.result);
+        setStage("results");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (err) {
+        console.error("[herbal-hub] recommend failed:", err);
+        setErrorMsg(
+          err instanceof Error ? err.message : "Something went wrong."
+        );
+        setStage("error");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    },
+    [profile]
+  );
 
   const restart = useCallback(() => {
     setResult(null);
     setErrorMsg("");
     setPrimaryConcern("");
+    setProfile(null);
     setStage("intro");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
@@ -97,10 +108,11 @@ export default function Home() {
 
         {stage === "loading" && <LoadingState />}
 
-        {stage === "results" && result && (
+        {stage === "results" && result && profile && (
           <ResultsDisplay
             result={result}
             primaryConcern={primaryConcern}
+            profile={profile}
             onRestart={restart}
           />
         )}
@@ -111,6 +123,13 @@ export default function Home() {
       </main>
 
       <SiteFooter />
+
+      {/* Pre-quiz onboarding popup: region + sex + pregnancy */}
+      <OnboardingDialog
+        open={onboardingOpen}
+        onOpenChange={setOnboardingOpen}
+        onComplete={handleOnboardingComplete}
+      />
     </div>
   );
 }

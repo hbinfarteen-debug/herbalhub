@@ -10,6 +10,8 @@ import {
   Clock,
   Leaf,
   ShieldCheck,
+  MapPin,
+  Baby,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,17 +27,20 @@ import type {
   TeaRecommendation,
   MealRecommendation,
   WellnessTip,
+  UserProfile,
 } from "@/lib/types";
 
 interface ResultsDisplayProps {
   result: RecommendationResult;
   primaryConcern: string;
+  profile: UserProfile;
   onRestart: () => void;
 }
 
 export function ResultsDisplay({
   result,
   primaryConcern,
+  profile,
   onRestart,
 }: ResultsDisplayProps) {
   return (
@@ -60,10 +65,23 @@ export function ResultsDisplay({
             {result.summary}
           </p>
           {primaryConcern && (
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-secondary px-4 py-1.5 text-sm text-secondary-foreground">
-              <Leaf className="h-3.5 w-3.5 text-primary" />
-              <span className="text-muted-foreground">For:</span>
-              <span className="font-medium">{primaryConcern}</span>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              <Badge variant="secondary" className="gap-1.5 bg-secondary px-3 py-1.5 text-sm">
+                <Leaf className="h-3.5 w-3.5 text-primary" />
+                <span className="text-muted-foreground">For:</span>
+                <span className="font-medium text-foreground">{primaryConcern}</span>
+              </Badge>
+              <Badge variant="secondary" className="gap-1.5 bg-secondary px-3 py-1.5 text-sm">
+                <MapPin className="h-3.5 w-3.5 text-primary" />
+                <span className="text-muted-foreground">Region:</span>
+                <span className="font-medium text-foreground">{profile.region}</span>
+              </Badge>
+              {profile.pregnancy && profile.pregnancy !== "not-pregnant" && (
+                <Badge className="gap-1.5 border-primary/30 bg-primary/10 px-3 py-1.5 text-sm text-primary">
+                  <Baby className="h-3.5 w-3.5" />
+                  <span className="font-medium">Pregnancy-safe</span>
+                </Badge>
+              )}
             </div>
           )}
         </motion.div>

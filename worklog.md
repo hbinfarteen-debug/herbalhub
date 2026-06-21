@@ -46,3 +46,42 @@ Stage Summary:
 - Herbal theme (sage/cream/amber), fully responsive, sticky footer, Framer Motion animations, accessible.
 - Lint clean, no runtime/console errors, verified interactive via Agent Browser.
 - Key files: `src/app/page.tsx`, `src/app/api/recommend/route.ts`, `src/lib/questions.ts`, `src/lib/types.ts`, `src/components/herbal-hub/*`.
+
+---
+Task ID: 2
+Agent: main (Z.ai Code)
+Task: Add pre-quiz onboarding popup that captures region/country, biological sex, and pregnancy/nursing status — so the AI prioritizes regionally available herbs & foods (e.g. Zimbabwe → zumbani, moringa, rooibos, sadza) and keeps herbs safe for pregnancy.
+
+Work Log:
+- Read previous worklog and current source (types.ts, page.tsx, api/recommend/route.ts, results-display.tsx).
+- Decided UX: a popup **OnboardingDialog** (shadcn Dialog) that appears when the user clicks "Find my remedy", BEFORE the 9 questions. Collects region/sex/pregnancy, then transitions into the existing wizard.
+- Extended `src/lib/types.ts`: added `BiologicalSex`, `PregnancyStatus`, `UserProfile { region, macroRegion, sex, pregnancy }`; added `profile` to `RecommendRequestBody`.
+- Created `src/lib/onboarding.ts`: curated ~120-country list grouped into 15 macro culinary/herbal regions (Southern Africa, East Africa, South Asia, East Asia, etc.), sex options, pregnancy options, and a `detectCountryFromTimezone()` helper mapping IANA timezones → country (e.g. Africa/Harare → Zimbabwe) for auto-prefill.
+- Built `src/components/herbal-hub/onboarding-dialog.tsx`:
+  - Three-step "Before we begin" popup: (1) searchable country combobox (Popover + Command, grouped by macro-region) with timezone auto-detect, (2) biological sex cards, (3) pregnancy/nursing cards shown ONLY when sex = female (Framer Motion height animation).
+  - Validation: "Begin consultation" disabled until region + sex (+ pregnancy if female) chosen.
+  - Selecting a non-female sex clears any stale pregnancy choice (handled in click handler, not effect — per React guidance).
+  - A11y: combobox trigger has aria-expanded/aria-controls/aria-haspopup; pregnancy section conditionally rendered.
+- Wired into `src/app/page.tsx`: added `onboardingOpen` + `profile` state; "Find my remedy" now opens the dialog; on submit stores profile and advances to questions; profile sent with the recommend API call; passed to ResultsDisplay.
+- Updated `src/app/api/recommend/route.ts`:
+  - `buildPrompt(answers, profile)` now injects region/sex/pregnancy context.
+  - System prompt instructs the AI to PRIORITIZE herbs & foods native to the user's region (with concrete examples per macro-region), may include a non-regional herb only with a local alternative noted.
+  - Pregnancy = hard safety constraint: explicitly forbids uterine-stimulating/emmenagogue herbs (pennyroyal, rue, dong quai, cohosh, tansy, mugwort, high-dose rosemary/sage, etc.) and favors pregnancy-safe options. Nursing: avoids milk-reducing herbs, favors fenugreek/fennel/moringa.
+  - `fallbackResult(answers, profile)` now returns regionally-flavored fallback herbs (e.g. Zumbani+Ginger+Rooibos for Zimbabwe, Tulsi for South Asia) and meals (Sadza with greens for Southern Africa, Ginger-Turmeric Dal for South Asia, Congee for East Asia, Pepper Soup for West Africa) with pregnancy-aware cautions.
+  - Request validation requires profile (region, sex, pregnancy if female).
+- Updated `src/components/herbal-hub/results-display.tsx`: header now shows three badges — "For: <concern>", "Region: <country>", and a "Pregnancy-safe" badge (only when pregnant/nursing/trying).
+- Fixed lint issues: removed setState-in-effect for pregnancy clearing (moved to click handler); kept timezone detection effect with a targeted eslint-disable (legitimate client-only API sync to avoid SSR hydration mismatch); fixed combobox a11y (removed role="combobox", added aria-controls/aria-haspopup, id on PopoverContent).
+- `bun run lint` — clean (0 errors, 0 warnings).
+- Browser-verified end-to-end with Agent Browser:
+  - Onboarding popup opens on "Find my remedy"; country combobox searchable & grouped; Female reveals pregnancy question; Male does NOT.
+  - "Begin consultation" correctly gated by validation.
+  - Full flow: Zimbabwe + Female + Pregnant + morning sickness → AI returned Zimbabwe-specific herbs (Zumbani, ginger, rooibos, baobab, moringa), local meals (rapoko millet porridge, moringa & pumpkin seed stew with sadza, baobab smoothie), pregnancy-safe cautions on every tea.
+  - Results header shows "For:", "Region: Zimbabwe", "Pregnancy-safe" badges.
+  - Tested Male path (US): no pregnancy question, Begin enabled after region+sex.
+  - No console errors/warnings; dev.log shows POST /api/recommend 200 (~16s), no server errors.
+
+Stage Summary:
+- Herbal Hub now gathers region/country, biological sex, and pregnancy/nursing status via a pre-quiz popup before the 9 symptom questions.
+- The AI (z-ai-web-dev-sdk LLM) PRIORITIZES regionally native herbs & foods while still allowing well-known alternatives, and strictly avoids contraindicated herbs during pregnancy/nursing.
+- Results display region + pregnancy-safe badges; fallback path is also region-aware.
+- Lint clean; full flow verified interactive in the browser for both a Zimbabwe-pregnant and a US-male case.

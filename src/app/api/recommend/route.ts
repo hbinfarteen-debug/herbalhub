@@ -3,8 +3,10 @@ import ZAI from "z-ai-web-dev-sdk";
 import { QUESTIONS } from "@/lib/questions";
 import type {
   Answers,
+  PregnancyStatus,
   RecommendationResult,
   RecommendApiResponse,
+  UserProfile,
 } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -67,40 +69,90 @@ function buildProfile(answers: Answers): string {
   }).join("\n");
 }
 
-function buildPrompt(answers: Answers): { system: string; user: string } {
-  const profile = buildProfile(answers);
+const PREGNANCY_LABEL: Record<PregnancyStatus, string> = {
+  "not-pregnant": "Not pregnant",
+  pregnant: "Currently pregnant — AVOID uterine-stimulating/emmenagogue herbs",
+  nursing: "Currently nursing / breastfeeding — favor milk-supporting, baby-safe herbs",
+  trying: "Trying to conceive — keep choices gentle and fertility-conscious",
+};
 
-  const system = `You are Sage, an expert clinical herbalist and holistic nutritionist with deep knowledge of Western, Ayurvedic, and Traditional Chinese herbal traditions.
+function buildContext(profile: UserProfile): string {
+  const sexLabel =
+    profile.sex === "female"
+      ? "Female"
+      : profile.sex === "male"
+        ? "Male"
+        : "Prefer not to say";
 
-Your job: given a person's full wellness profile, recommend personalized herbal teas, nourishing meals, and lifestyle tips.
+  const lines: string[] = [
+    `Region / country: ${profile.region}${
+      profile.macroRegion ? ` (macro-region: ${profile.macroRegion})` : ""
+    }`,
+    `Biological sex: ${sexLabel}`,
+  ];
+
+  if (profile.sex === "female" && profile.pregnancy) {
+    lines.push(`Pregnancy status: ${PREGNANCY_LABEL[profile.pregnancy]}`);
+  }
+  return lines.join("\n");
+}
+
+function buildPrompt(
+  answers: Answers,
+  profile: UserProfile
+): { system: string; user: string } {
+  const profileText = buildProfile(answers);
+  const contextText = buildContext(profile);
+  const isPregnant = profile.pregnancy === "pregnant";
+  const isNursing = profile.pregnancy === "nursing";
+
+  const system = `You are Sage, an expert clinical herbalist and holistic nutritionist with deep knowledge of Western, Ayurvedic, Traditional Chinese, African, and Indigenous herbal traditions from around the world.
+
+Your job: given a person's full wellness profile AND their regional + biological context, recommend personalized herbal teas, nourishing meals, and lifestyle tips.
+
+REGIONAL INGREDIENTS (IMPORTANT):
+- The person lives in ${profile.region}${
+    profile.macroRegion ? ` (${profile.macroRegion})` : ""
+  }. PRIORITIZE herbs, teas, and foods that are native to or commonly available in that region and its cuisine.
+- For each tea and meal, prefer locally rooted ingredients first. For example, for Southern Africa think zumbani (Lippia javanica), moringa, rooibos, African potato, sorghum, millet (rapoko/ragi), sweet potato leaves, baobab; for South Asia think tulsi, ginger, turmeric, cardamom, ashwagandha, curry leaf; for East Asia think goji, jujube, chrysanthemum, astragalus, ginger; for the Mediterranean think chamomile, sage, thyme, olive leaf, fennel.
+- You MAY include a well-known non-regional herb if it is especially effective, but always note where it's from and offer a local alternative. Never make a person feel their local pantry is insufficient.
+
+SEX & PREGNANCY SAFETY:
+- Tailor hormone-, cycle-, and prostate-relevant herbs to the stated biological sex where useful.
+- ${
+    isPregnant
+      ? "The person is PREGNANT. This is a hard constraint: NEVER recommend uterine-stimulating or emmenagogue herbs (e.g. pennyroyal, rue, dong quai, blue/black cohosh, tansy, mugwort, yarrow in medicinal doses, high-dose rosemary/sage/parsley seed, aloe latex, juniper berry in quantity). Favor pregnancy-safe options like ginger (for nausea), mild chamomile in moderation, peppermint, lemon balm, raspberry leaf (traditionally third trimester), rooibos, and nourishing broths. When in doubt, choose the gentler option and note the caution."
+      : isNursing
+        ? "The person is NURSING. Avoid herbs that reduce milk supply (e.g. sage, peppermint in large amounts, parsley in quantity, oregano) and any stimulant laxatives. Favor milk-supporting, baby-safe herbs like fenugreek, fennel, millet/ragi porridge, moringa, and gentle nourishing foods."
+        : "No special pregnancy/nursing constraints apply."
+  }
 
 PRINCIPLES:
-- Treat the whole person, not just the named symptom. Weave in their sleep, stress, activity, age and diet.
+- Treat the whole person, not just the named symptom. Weave in their sleep, stress, activity, age, diet, region and sex.
 - STRICTLY respect allergies and medications. Never recommend an herb or food the person is allergic to, and flag herb–drug interactions in the caution field.
-- Prefer common, accessible, food-safe herbs (e.g. chamomile, ginger, peppermint, lemon balm, turmeric, lavender, rooibos, tulsi, fennel, cinnamon, nettle, rosehip, eleuthero).
-- Keep preparations practical for a home kitchen. Teas should be infusions or decoctions a beginner can make.
-- Meals must fit the stated diet exactly and use whole, nourishing ingredients.
+- Keep preparations practical for a home kitchen using ingredients realistic for their region. Teas should be infusions or decoctions a beginner can make.
+- Meals must fit the stated diet exactly and use whole, nourishing, regionally sensible ingredients.
 - Be warm, specific and actionable. Avoid generic filler.
 
 You MUST respond with a single valid JSON object and nothing else — no markdown fences, no commentary. The JSON must match this exact shape:
 
 {
-  "summary": "2-3 sentence empathetic summary acknowledging their situation and the approach you're taking",
+  "summary": "2-3 sentence empathetic summary acknowledging their situation, region, and the approach you're taking",
   "teas": [
     {
-      "name": "Tea blend name (evocative)",
+      "name": "Tea blend name (evocative, may reference local tradition)",
       "herbs": ["herb 1", "herb 2", "herb 3"],
-      "benefits": "Why this tea for this person, tied to their profile",
-      "preparation": "Clear, step-by-step brewing instructions with amounts and steep time",
+      "benefits": "Why this tea for this person, tied to their profile, region and (if relevant) pregnancy safety",
+      "preparation": "Clear, step-by-step brewing instructions with amounts and steep time, using accessible local ingredients",
       "bestTime": "When in the day to drink it",
-      "caution": "Any relevant caution or interaction note, or null"
+      "caution": "Any relevant caution, interaction, or pregnancy note, or null"
     }
   ],
   "meals": [
     {
       "name": "Meal name",
       "keyIngredients": ["ingredient 1", "ingredient 2", "..."],
-      "why": "Why this meal supports their recovery, tied to their profile",
+      "why": "Why this meal supports their recovery, tied to their profile and region",
       "briefRecipe": "A 3-5 line approachable recipe outline (not a full cookbook recipe)",
       "mealType": "Breakfast | Lunch | Dinner | Snack"
     }
@@ -117,11 +169,15 @@ You MUST respond with a single valid JSON object and nothing else — no markdow
 
 Provide 2-3 teas, 2-3 meals, and 3-4 wellness tips. Every field is required (caution may be null). Output ONLY the JSON.`;
 
-  const user = `Here is the person's wellness profile gathered from 9 questions:
+  const user = `Here is the person's context gathered before the quiz:
 
-${profile}
+${contextText}
 
-Now craft their personalized herbal tea and meal recommendations as the JSON object described. Remember: respect their allergies ("${answers.allergies || "none stated"}") and medications ("${answers.medications || "none stated"}"), match their diet ("${labeled("diet", answers.diet || "omnivore")}"), and honor their age ("${labeled("ageRange", answers.ageRange || "31-50")}").`;
+And here is their wellness profile gathered from 9 questions:
+
+${profileText}
+
+Now craft their personalized herbal tea and meal recommendations as the JSON object described. Remember: respect their allergies ("${answers.allergies || "none stated"}") and medications ("${answers.medications || "none stated"}"), match their diet ("${labeled("diet", answers.diet || "omnivore")}"), honor their age ("${labeled("ageRange", answers.ageRange || "31-50")}"), and PRIORITIZE ingredients native to ${profile.region}.`;
 
   return { system, user };
 }
@@ -155,29 +211,42 @@ function safeParseJson(content: string): RecommendationResult | null {
   }
 }
 
-function fallbackResult(answers: Answers): RecommendationResult {
+function fallbackResult(
+  answers: Answers,
+  profile: UserProfile
+): RecommendationResult {
   const concern = answers.primaryConcern?.trim() || "what you're feeling";
+  const isPregnant = profile.pregnancy === "pregnant";
+  const isNursing = profile.pregnancy === "nursing";
+
+  // Pick regionally-flavored fallback herbs/foods
+  const regionalHerbs = regionalFallbackHerbs(profile.region);
+  const regionalMeal = regionalFallbackMeal(profile.region);
+
   return {
     summary:
       "We couldn't reach the herbalist AI just now, but here's a gentle, safe starting point you can build on. Please try again shortly for a fully personalized blend.",
     teas: [
       {
-        name: "Calm & Comfort Infusion",
-        herbs: ["Chamomile", "Lemon balm", "Ginger"],
-        benefits: `A soothing baseline for ${concern} — gentle on the nervous system and easy to digest.`,
+        name: `${profile.region} Comfort Infusion`,
+        herbs: regionalHerbs,
+        benefits: `A soothing baseline for ${concern}, using herbs common in ${profile.region} — gentle on the nervous system and easy to digest.`,
         preparation:
           "Steep 1 tsp of the blend in 250ml just-boiled water for 8–10 minutes, covered. Strain and sip warm.",
         bestTime: "Evening, or whenever symptoms flare",
-        caution: "Skip if allergic to ragweed or daisies.",
+        caution: isPregnant
+          ? "Pregnancy: this gentle blend avoids uterine stimulants, but confirm any herb with your midwife or doctor."
+          : isNursing
+            ? "Nursing: skip large amounts of peppermint/sage, which can reduce milk supply."
+            : "Skip if allergic to any ingredient.",
       },
     ],
     meals: [
       {
-        name: "Warming Root Vegetable Bowl",
-        keyIngredients: ["Sweet potato", "Carrot", "Ginger", "Greens", "Olive oil"],
-        why: "Whole-food, anti-inflammatory base that supports recovery without weighing you down.",
-        briefRecipe:
-          "Roast cubed sweet potato and carrot with grated ginger and olive oil at 200°C for 25 min. Serve over greens with a squeeze of lemon.",
+        name: regionalMeal.name,
+        keyIngredients: regionalMeal.ingredients,
+        why: `A whole-food, regionally familiar base from ${profile.region} that supports recovery without weighing you down.`,
+        briefRecipe: regionalMeal.recipe,
         mealType: "Lunch",
       },
     ],
@@ -203,8 +272,63 @@ function fallbackResult(answers: Answers): RecommendationResult {
   };
 }
 
+function regionalFallbackHerbs(region: string): string[] {
+  const r = region.toLowerCase();
+  if (r.includes("zimbabwe") || r.includes("south africa") || r.includes("botswana") || r.includes("zambia") || r.includes("malawi") || r.includes("mozambique") || r.includes("namibia"))
+    return ["Zumbani (Lippia javanica)", "Ginger", "Rooibos"];
+  if (r.includes("india") || r.includes("pakistan") || r.includes("bangladesh") || r.includes("sri lanka") || r.includes("nepal"))
+    return ["Tulsi (holy basil)", "Ginger", "Lemongrass"];
+  if (r.includes("china") || r.includes("japan") || r.includes("korea") || r.includes("taiwan"))
+    return ["Ginger", "Jujube (red date)", "Chrysanthemum"];
+  if (r.includes("nigeria") || r.includes("ghana") || r.includes("senegal") || r.includes("cameroon") || r.includes("kenya") || r.includes("tanzania") || r.includes("uganda") || r.includes("ethiopia"))
+    return ["Ginger", "Moringa leaf", "Lemongrass"];
+  if (r.includes("turkey") || r.includes("iran") || r.includes("morocco") || r.includes("egypt") || r.includes("lebanon"))
+    return ["Chamomile", "Rosehip", "Mint"];
+  if (r.includes("mexico") || r.includes("brazil") || r.includes("argentina") || r.includes("peru") || r.includes("colombia"))
+    return ["Chamomile (manzanilla)", "Ginger", "Lemongrass"];
+  return ["Chamomile", "Ginger", "Lemon balm"];
+}
+
+function regionalFallbackMeal(region: string): { name: string; ingredients: string[]; recipe: string } {
+  const r = region.toLowerCase();
+  if (r.includes("zimbabwe") || r.includes("south africa") || r.includes("botswana") || r.includes("zambia") || r.includes("malawi") || r.includes("mozambique") || r.includes("namibia"))
+    return {
+      name: "Sadza with Leafy Greens & Peanut Sauce",
+      ingredients: ["Mealie meal (maize)", "Rape / chou moellier greens", "Peanut butter", "Tomato", "Onion"],
+      recipe:
+        "Cook sadza from mealie meal. Saute onion and tomato, add chopped greens and simmer until soft. Swirl in a spoon of peanut butter for a nourishing sauce and serve over the sadza.",
+    };
+  if (r.includes("india") || r.includes("pakistan") || r.includes("bangladesh") || r.includes("sri lanka") || r.includes("nepal"))
+    return {
+      name: "Ginger-Turmeric Dal & Rice",
+      ingredients: ["Red lentils", "Turmeric", "Ginger", "Tomato", "Basmati rice", "Ghee"],
+      recipe:
+        "Simmer lentils with turmeric, grated ginger and tomato until soft. Temper with ghee and cumin. Serve over basmati rice for a warming, easy-to-digest meal.",
+    };
+  if (r.includes("china") || r.includes("japan") || r.includes("korea") || r.includes("taiwan"))
+    return {
+      name: "Ginger-Jujube Congee",
+      ingredients: ["Rice", "Ginger", "Jujube (red date)", "Scallion", "Stock"],
+      recipe:
+        "Simmer rice in plenty of stock with sliced ginger and jujubes until it becomes a soft porridge. Top with scallions and sip slowly.",
+    };
+  if (r.includes("nigeria") || r.includes("ghana") || r.includes("senegal") || r.includes("cameroon"))
+    return {
+      name: "Pepper Soup with Plantain",
+      ingredients: ["Fish or chicken", " scent leaf / basil", "Chili", "Plantain", "Garlic"],
+      recipe:
+        "Simmer fish or chicken with chili, garlic and scent leaf in a light broth until tender. Serve with boiled plantain for a warming, restorative meal.",
+    };
+  return {
+    name: "Warming Root Vegetable Bowl",
+    ingredients: ["Sweet potato", "Carrot", "Ginger", "Greens", "Olive oil"],
+    recipe:
+      "Roast cubed sweet potato and carrot with grated ginger and olive oil at 200°C for 25 min. Serve over greens with a squeeze of lemon.",
+  };
+}
+
 export async function POST(request: Request) {
-  let body: { answers?: Answers };
+  let body: { answers?: Answers; profile?: UserProfile };
   try {
     body = await request.json();
   } catch {
@@ -215,9 +339,21 @@ export async function POST(request: Request) {
   }
 
   const answers = body.answers;
+  const profile = body.profile;
   if (!answers || typeof answers !== "object") {
     return NextResponse.json<RecommendApiResponse>(
       { ok: false, error: "Missing answers" },
+      { status: 400 }
+    );
+  }
+  if (
+    !profile ||
+    !profile.region ||
+    !profile.sex ||
+    (profile.sex === "female" && !profile.pregnancy)
+  ) {
+    return NextResponse.json<RecommendApiResponse>(
+      { ok: false, error: "Missing onboarding profile (region, sex, pregnancy)" },
       { status: 400 }
     );
   }
@@ -229,7 +365,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { system, user } = buildPrompt(answers);
+  const { system, user } = buildPrompt(answers, profile);
 
   try {
     const zai = await ZAI.create();
@@ -248,7 +384,7 @@ export async function POST(request: Request) {
       // Surface a graceful fallback so the UX never breaks
       return NextResponse.json<RecommendApiResponse>({
         ok: true,
-        result: fallbackResult(answers),
+        result: fallbackResult(answers, profile),
       });
     }
 
@@ -263,7 +399,7 @@ export async function POST(request: Request) {
     console.error("[recommend] LLM error:", err);
     return NextResponse.json<RecommendApiResponse>({
       ok: true,
-      result: fallbackResult(answers),
+      result: fallbackResult(answers, profile),
     });
   }
 }
