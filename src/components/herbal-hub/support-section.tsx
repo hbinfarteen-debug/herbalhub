@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 const ECOCASH_NUMBER = "0775939688";
 const ECOCASH_ACCOUNT_NAME = "Barry Changwa";
 
-export function DonateSection() {
+export function SupportSection() {
   const [copied, setCopied] = useState(false);
 
   const copyNumber = async () => {
@@ -23,7 +23,7 @@ export function DonateSection() {
   };
 
   return (
-    <section id="donate" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+    <section id="support" className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -42,13 +42,14 @@ export function DonateSection() {
             Keep the kettle brewing
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            Herbal Hub is free for everyone. If a blend helped you, a small
-            donation keeps the garden growing and the AI running. Every cup of
-            gratitude counts.
+            Herbal Hub is free for everyone. Your support keeps the servers
+            running, the AI brewing, and helps bring more projects like this to
+            life — so plant wisdom stays within everyone&apos;s reach. Every cup
+            of gratitude counts.
           </p>
         </div>
 
-        {/* EcoCash donation card */}
+        {/* EcoCash support card */}
         <div className="mx-auto mt-8 max-w-md rounded-2xl border border-border/70 bg-card/90 p-6 shadow-sm backdrop-blur">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -56,7 +57,7 @@ export function DonateSection() {
             </span>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Donate via EcoCash
+                Support via EcoCash
               </p>
               <p className="text-sm font-semibold text-foreground">
                 Mobile money · Zimbabwe
@@ -107,7 +108,7 @@ export function DonateSection() {
             >
               <Button className="w-full gap-2 rounded-full">
                 <Heart className="h-4 w-4 fill-primary-foreground" />
-                Donate to {ECOCASH_ACCOUNT_NAME.split(" ")[0]}
+                Support {ECOCASH_ACCOUNT_NAME.split(" ")[0]}
               </Button>
             </a>
           </div>

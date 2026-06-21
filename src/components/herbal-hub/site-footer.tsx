@@ -43,8 +43,8 @@ export function SiteFooter() {
                 </a>
               </li>
               <li>
-                <a href="#donate" className="transition-colors hover:text-primary">
-                  Donate
+                <a href="#support" className="transition-colors hover:text-primary">
+                  Support
                 </a>
               </li>
             </ul>
@@ -94,9 +94,9 @@ export function SiteFooter() {
                   {ECOCASH_NUMBER}
                 </span>
               </p>
-              <a href="#donate">
+              <a href="#support">
                 <button className="mt-2 text-xs font-semibold text-primary transition-opacity hover:opacity-80">
-                  Donate →
+                  Support →
                 </button>
               </a>
             </div>

@@ -9,7 +9,7 @@ import { OnboardingDialog } from "@/components/herbal-hub/onboarding-dialog";
 import { QuestionnaireWizard } from "@/components/herbal-hub/questionnaire-wizard";
 import { LoadingState } from "@/components/herbal-hub/loading-state";
 import { ResultsDisplay } from "@/components/herbal-hub/results-display";
-import { DonateSection } from "@/components/herbal-hub/donate-section";
+import { SupportSection } from "@/components/herbal-hub/support-section";
 import { WhatsAppButton } from "@/components/herbal-hub/whatsapp-button";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RotateCcw } from "lucide-react";
@@ -98,7 +98,7 @@ export default function Home() {
             <Hero onStart={startConsultation} />
             <HowItWorks />
             <StartCTA onStart={startConsultation} />
-            <DonateSection />
+            <SupportSection />
           </>
         )}
 
