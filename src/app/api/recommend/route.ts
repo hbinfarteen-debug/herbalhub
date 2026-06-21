@@ -3,6 +3,7 @@ import ZAI from "z-ai-web-dev-sdk";
 import { QUESTIONS } from "@/lib/questions";
 import type {
   Answers,
+  BlendStyle,
   PregnancyStatus,
   RecommendationResult,
   RecommendApiResponse,
@@ -148,7 +149,8 @@ You MUST respond with a single valid JSON object and nothing else — no markdow
   "teas": [
     {
       "name": "Tea blend name (evocative, may reference local tradition)",
-      "herbs": ["up to 6 herbs/spices — a 'super drink' blend blending cultivated + wild forageable plants from the region"],
+      "herbs": ["herb/spice 1", "..."],
+      "blendStyle": "simple | optimum | superblend",
       "benefits": "Why this tea for this person, tied to their profile, region and (if relevant) pregnancy safety",
       "preparation": "Clear, step-by-step brewing instructions with amounts and steep time, using accessible local ingredients",
       "bestTime": "When in the day to drink it",
@@ -175,7 +177,13 @@ You MUST respond with a single valid JSON object and nothing else — no markdow
   "disclaimer": "A one-line reminder that this is educational, not medical advice, tailored to their case"
 }
 
-Provide 2-3 teas, 2-3 meals, and 3-4 wellness tips. Each tea blend may use up to 6 herbs/spices to form a potent "super drink" — favor 4-6 ingredients when they work synergistically. Every field is required (caution and whereToFind may be null). Output ONLY the JSON.`;
+THREE-TIER TEA PROGRESSION (IMPORTANT): Provide EXACTLY 3 teas, in this order, escalating in complexity so the person can choose their level of effort:
+1. blendStyle "simple" — the FEWEST ingredients possible (2-3 herbs/spices). A gentle, easy-to-source starter tea. Think: the 2-3 most effective, accessible local herbs for this person's condition.
+2. blendStyle "optimum" — an OPTIMUM balanced blend (4-5 herbs/spices). The sweet spot of potency and simplicity — adds a supporting herb or two and a regional spice to the simple base.
+3. blendStyle "superblend" — a SUPERBLEND with MANY relevant herbs and spices (6-8 ingredients). The most potent synergistic formula, layering complementary herbs + warming spices + at least one wild/forageable plant from their region.
+Each blend must use MORE ingredients than the one before it. Include at least one wild/forageable plant in the optimum and superblend (and the simple one too, if a safe single-herb option exists). Set "blendStyle" on every tea exactly as above.
+
+Provide exactly 3 teas, 2-3 meals, and 3-4 wellness tips. Every field is required (caution and whereToFind may be null). Output ONLY the JSON.`;
 
   const user = `Here is the person's context gathered before the quiz:
 
@@ -213,10 +221,36 @@ function safeParseJson(content: string): RecommendationResult | null {
     ) {
       return null;
     }
+    // Normalize blendStyle + ensure simple → optimum → superblend ordering.
+    normalizeTeas(parsed);
     return parsed;
   } catch {
     return null;
   }
+}
+
+/** Infer blendStyle from herb count when missing, and sort teas ascending by
+ *  complexity so the UI always shows Simple → Optimum → Superblend. */
+function normalizeTeas(result: RecommendationResult): void {
+  const order: Record<BlendStyle, number> = {
+    simple: 0,
+    optimum: 1,
+    superblend: 2,
+  };
+  for (const tea of result.teas) {
+    if (!tea.blendStyle) {
+      const n = tea.herbs?.length ?? 0;
+      tea.blendStyle =
+        n <= 3 ? "simple" : n <= 5 ? "optimum" : "superblend";
+    }
+  }
+  result.teas.sort((a, b) => {
+    const ra = order[a.blendStyle ?? "optimum"] ?? 1;
+    const rb = order[b.blendStyle ?? "optimum"] ?? 1;
+    if (ra !== rb) return ra - rb;
+    // tie-break by herb count ascending
+    return (a.herbs?.length ?? 0) - (b.herbs?.length ?? 0);
+  });
 }
 
 function fallbackResult(
@@ -230,24 +264,57 @@ function fallbackResult(
   // Pick regionally-flavored fallback herbs/foods
   const regionalHerbs = regionalFallbackHerbs(profile.region);
   const regionalMeal = regionalFallbackMeal(profile.region);
+  const foraging = regionalForagingNote(profile.region);
+
+  // Build the three-tier progression from the regional herb pool:
+  //  simple (2-3) → optimum (4-5) → superblend (all, up to ~8)
+  const simpleHerbs = regionalHerbs.slice(0, 3);
+  const optimumHerbs = regionalHerbs.slice(0, 5);
+  const superHerbs = regionalHerbs;
+  const regionLabel = profile.region;
+
+  const pregnancyCaution = isPregnant
+    ? "Pregnancy: this blend avoids uterine stimulants, but confirm any herb with your midwife or doctor."
+    : isNursing
+      ? "Nursing: skip large amounts of peppermint/sage, which can reduce milk supply."
+      : "Skip if allergic to any ingredient.";
 
   return {
     summary:
-      "We couldn't reach the herbalist AI just now, but here's a gentle, safe starting point you can build on. Please try again shortly for a fully personalized blend.",
+      "We couldn't reach the herbalist AI just now, but here's a gentle, safe starting point you can build on — in three steps from simple to superblend. Please try again shortly for a fully personalized blend.",
     teas: [
       {
-        name: `${profile.region} Comfort Super-Blend`,
-        herbs: regionalHerbs,
-        benefits: `A soothing 6-herb baseline for ${concern}, blending cultivated and wild-forageable plants common in ${profile.region} — gentle on the nervous system and easy to digest.`,
+        name: `${regionLabel} Simple Starter`,
+        herbs: simpleHerbs,
+        blendStyle: "simple",
+        benefits: `The fewest ingredients to begin easing ${concern} — just the most accessible, effective local herbs from ${regionLabel}. A gentle entry point you can brew in minutes.`,
+        preparation:
+          "Steep 1 tsp of the blend in 250ml just-boiled water for 8–10 minutes, covered. Strain and sip warm. Up to 3 cups a day.",
+        bestTime: "Whenever symptoms flare, or morning and evening",
+        caution: pregnancyCaution,
+        whereToFind: foraging,
+      },
+      {
+        name: `${regionLabel} Optimum Blend`,
+        herbs: optimumHerbs,
+        blendStyle: "optimum",
+        benefits: `A balanced 4–5 herb blend for ${concern} — the sweet spot of potency and simplicity, adding a supporting herb and a regional warming spice to the simple base.`,
         preparation:
           "Steep 1 heaped tsp of the blend in 300ml just-boiled water for 10–12 minutes, covered. Strain and sip warm. Drink 2–3 cups through the day.",
-        bestTime: "Morning and evening, or whenever symptoms flare",
-        caution: isPregnant
-          ? "Pregnancy: this gentle blend avoids uterine stimulants, but confirm any herb with your midwife or doctor."
-          : isNursing
-            ? "Nursing: skip large amounts of peppermint/sage, which can reduce milk supply."
-            : "Skip if allergic to any ingredient.",
-        whereToFind: regionalForagingNote(profile.region),
+        bestTime: "Morning and afternoon",
+        caution: pregnancyCaution,
+        whereToFind: foraging,
+      },
+      {
+        name: `${regionLabel} Superblend`,
+        herbs: superHerbs,
+        blendStyle: "superblend",
+        benefits: `A potent synergistic superblend for ${concern}, layering many relevant herbs, spices and wild-forageable plants from ${regionLabel} for the strongest combined effect.`,
+        preparation:
+          "Steep 1 heaped tsp of the blend in 350ml just-boiled water for 12–15 minutes, covered. Strain and sip warm. Drink 2–3 cups through the day; rotate with the simpler blends if desired.",
+        bestTime: "Through the day for sustained support",
+        caution: pregnancyCaution,
+        whereToFind: foraging,
       },
     ],
     meals: [
@@ -284,18 +351,18 @@ function fallbackResult(
 function regionalFallbackHerbs(region: string): string[] {
   const r = region.toLowerCase();
   if (r.includes("zimbabwe") || r.includes("south africa") || r.includes("botswana") || r.includes("zambia") || r.includes("malawi") || r.includes("mozambique") || r.includes("namibia"))
-    return ["Zumbani (Lippia javanica)", "Ginger", "Rooibos", "Purslane (wild)", "Wild mint", "Lemon"];
+    return ["Zumbani (Lippia javanica)", "Ginger", "Lemon", "Rooibos", "Wild mint", "Purslane (wild)", "Blackjack (nchere)", "Honey"];
   if (r.includes("india") || r.includes("pakistan") || r.includes("bangladesh") || r.includes("sri lanka") || r.includes("nepal"))
-    return ["Tulsi (holy basil)", "Ginger", "Turmeric", "Purslane (kulfa)", "Lemongrass", "Black pepper"];
+    return ["Tulsi (holy basil)", "Ginger", "Turmeric", "Lemongrass", "Black pepper", "Purslane (kulfa)", "Cardamom", "Fennel"];
   if (r.includes("china") || r.includes("japan") || r.includes("korea") || r.includes("taiwan"))
-    return ["Ginger", "Jujube (red date)", "Chrysanthemum", "Purslane (ma chi xian)", "Goji berry", "Green tea"];
+    return ["Ginger", "Jujube (red date)", "Chrysanthemum", "Goji berry", "Green tea", "Purslane (ma chi xian)", "Tangerine peel", "Licorice root"];
   if (r.includes("nigeria") || r.includes("ghana") || r.includes("senegal") || r.includes("cameroon") || r.includes("kenya") || r.includes("tanzania") || r.includes("uganda") || r.includes("ethiopia"))
-    return ["Ginger", "Moringa leaf", "Lemongrass", "Scent leaf (basil)", "Purslane (wild)", "Cloves"];
+    return ["Ginger", "Moringa leaf", "Scent leaf (basil)", "Lemongrass", "Cloves", "Purslane (wild)", "Baobab", "Cinnamon"];
   if (r.includes("turkey") || r.includes("iran") || r.includes("morocco") || r.includes("egypt") || r.includes("lebanon"))
-    return ["Chamomile", "Rosehip", "Mint", "Dandelion (wild)", "Cinnamon", "Ginger"];
+    return ["Chamomile", "Mint", "Rosehip", "Cinnamon", "Ginger", "Dandelion (wild)", "Anise", "Sage"];
   if (r.includes("mexico") || r.includes("brazil") || r.includes("argentina") || r.includes("peru") || r.includes("colombia"))
-    return ["Chamomile (manzanilla)", "Ginger", "Lemongrass", "Purslane (verdolaga)", "Cinnamon", "Lime"];
-  return ["Chamomile", "Ginger", "Lemon balm", "Dandelion (wild)", "Nettle (wild)", "Honey"];
+    return ["Chamomile (manzanilla)", "Ginger", "Lemongrass", "Cinnamon", "Lime", "Purslane (verdolaga)", "Cacao", "Hibiscus"];
+  return ["Chamomile", "Ginger", "Lemon balm", "Nettle (wild)", "Dandelion (wild)", "Honey", "Cinnamon", "Rosehip"];
 }
 
 function regionalForagingNote(region: string): string {

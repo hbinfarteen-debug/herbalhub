@@ -122,3 +122,29 @@ Stage Summary:
 - Floating WhatsApp chat button (wa.me/263775939688) on every screen.
 - Donate section + footer EcoCash card for 0775939688 / Barry Changwa with copy + dial instructions.
 - Lint clean; full flow verified in browser.
+
+---
+Task ID: 4
+Agent: main (Z.ai Code)
+Task: Make the three herbal tea recommendations follow a clear progression — 1st = simplest (fewest ingredients), 2nd = optimum blend, 3rd = superblend with many herbs/spices.
+
+Work Log:
+- Added `BlendStyle = "simple" | "optimum" | "superblend"` type + `blendStyle?` field to `TeaRecommendation` in `src/lib/types.ts`.
+- Updated `src/app/api/recommend/route.ts`:
+  - Prompt now has a "THREE-TIER TEA PROGRESSION (IMPORTANT)" block requiring EXACTLY 3 teas in order: simple (2-3 herbs), optimum (4-5 herbs), superblend (6-8 herbs) — each using MORE ingredients than the last, with forageable plants in optimum+superblend. Added `blendStyle` to the JSON schema.
+  - Added `normalizeTeas()` in `safeParseJson`: infers blendStyle from herb count if the AI omits it, and SORTS teas simple → optimum → superblend so the UI order is always correct even if the AI returns them out of order.
+  - Rewrote `fallbackResult` teas array to produce all three tiers from the regional herb pool (simple = first 3, optimum = first 5, superblend = all 8), each with blendStyle + foraging notes.
+  - Expanded `regionalFallbackHerbs` to 8 herbs per region (was 6) so the superblend is meaningfully bigger than the optimum.
+- Updated `src/components/herbal-hub/results-display.tsx`:
+  - Added `BLEND_STYLE_META` (label + emoji + description) and a `BlendStyleBadge` component with tier-specific colors (emerald=simple, amber=optimum, rose=superblend).
+  - TeaCard now shows a tier badge above the tea name; herb section label simplified to "Herbs & spices · N".
+  - Teas ResultSection retitled: "Three blends, your choice of depth" with a description explaining the simple→optimum→superblend ladder. Grid changed to single-column so the progression reads as a clear ladder.
+- `bun run lint` — clean (0 errors, 0 warnings).
+- API verified: Zimbabwe + male + dry cough → 3 teas returned in order: [simple] 2 herbs, [optimum] 4 herbs, [superblend] 6 herbs.
+- Browser-verified end-to-end: results page shows "Three blends, your choice of depth" heading, then three tea cards in order each with a colored tier badge (Simple 🌱 / Optimum ⚖️ / Superblend 🔥) and escalating herb counts (2 → 4 → 7). No console errors; dev.log shows POST /api/recommend 200.
+
+Stage Summary:
+- Each consultation now yields exactly 3 teas in a deliberate complexity ladder: Simple (fewest ingredients) → Optimum (balanced) → Superblend (many herbs & spices), each labeled with a color-coded tier badge and using more ingredients than the one before.
+- Server-side normalizer guarantees the order and infers missing blendStyle from herb count, so the UI is consistent even if the AI is imperfect.
+- Fallback path follows the same three-tier structure with region-aware herbs.
+- Lint clean; verified in browser.

@@ -43,6 +43,9 @@ export interface UserProfile {
   pregnancy?: PregnancyStatus;
 }
 
+/** Which tier of complexity a tea blend represents. */
+export type BlendStyle = "simple" | "optimum" | "superblend";
+
 export interface TeaRecommendation {
   name: string;
   /** Up to 6 herbs/spices — a "super drink" blend */
@@ -53,6 +56,8 @@ export interface TeaRecommendation {
   caution?: string;
   /** Where to forage or source the wild/weed herbs in the blend, e.g. "Purslane grows as a low spreading weed in cultivated beds and disturbed soil; dandelion along field edges." Omit if all ingredients are store-bought. */
   whereToFind?: string;
+  /** Complexity tier: simple (fewest ingredients), optimum (balanced), superblend (many). */
+  blendStyle?: BlendStyle;
 }
 
 export interface MealRecommendation {

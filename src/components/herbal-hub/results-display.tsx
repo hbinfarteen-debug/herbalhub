@@ -23,12 +23,41 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type {
+  BlendStyle,
   RecommendationResult,
   TeaRecommendation,
   MealRecommendation,
   WellnessTip,
   UserProfile,
 } from "@/lib/types";
+
+// Tier metadata for the three blend styles.
+const BLEND_STYLE_META: Record<
+  BlendStyle,
+  { label: string; emoji: string; description: string }
+> = {
+  simple: {
+    label: "Simple",
+    emoji: "🌱",
+    description: "Fewest ingredients — a gentle start",
+  },
+  optimum: {
+    label: "Optimum",
+    emoji: "⚖️",
+    description: "Balanced potency & simplicity",
+  },
+  superblend: {
+    label: "Superblend",
+    emoji: "🔥",
+    description: "Many synergistic herbs & spices",
+  },
+};
+
+function blendStyleOf(tea: TeaRecommendation): BlendStyle {
+  if (tea.blendStyle) return tea.blendStyle;
+  const n = tea.herbs?.length ?? 0;
+  return n <= 3 ? "simple" : n <= 5 ? "optimum" : "superblend";
+}
 
 interface ResultsDisplayProps {
   result: RecommendationResult;
@@ -90,10 +119,10 @@ export function ResultsDisplay({
         <ResultSection
           icon={<Coffee className="h-5 w-5" />}
           eyebrow="Herbal Teas"
-          title="Sip these through your day"
-          description="Brewed gently to match your symptoms and constitution."
+          title="Three blends, your choice of depth"
+          description="Start simple, step up to optimum, or go all-in with the superblend. Each uses more herbs than the last — pick the one that fits your day."
         >
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid gap-5">
             {result.teas.map((tea, i) => (
               <TeaCard key={i} tea={tea} index={i} />
             ))}
@@ -206,7 +235,10 @@ function TeaCard({ tea, index }: { tea: TeaRecommendation; index: number }) {
       <Card className="h-full overflow-hidden border-border/70 transition-shadow hover:shadow-md">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3">
-            <div>
+            <div className="min-w-0">
+              <div className="mb-2">
+                <BlendStyleBadge style={blendStyleOf(tea)} />
+              </div>
               <CardTitle className="text-lg leading-tight text-foreground">
                 {tea.name}
               </CardTitle>
@@ -222,7 +254,7 @@ function TeaCard({ tea, index }: { tea: TeaRecommendation; index: number }) {
         <CardContent className="space-y-4">
           <div>
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {tea.herbs.length >= 5 ? "Super-blend herbs" : "Herbs"} · {tea.herbs.length}
+              Herbs &amp; spices · {tea.herbs.length}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {tea.herbs.map((herb) => (
@@ -356,5 +388,28 @@ function TipCard({ tip, index }: { tip: WellnessTip; index: number }) {
         </CardContent>
       </Card>
     </motion.div>
+  );
+}
+
+function BlendStyleBadge({ style }: { style: BlendStyle }) {
+  const meta = BLEND_STYLE_META[style];
+  return (
+    <span
+      className={
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold " +
+        (style === "simple"
+          ? "border-emerald-400/40 bg-emerald-50/70 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
+          : style === "optimum"
+            ? "border-amber-400/50 bg-amber-50/70 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300"
+            : "border-rose-400/40 bg-rose-50/70 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300")
+      }
+      title={meta.description}
+    >
+      <span aria-hidden>{meta.emoji}</span>
+      {meta.label}
+      <span className="hidden font-normal text-current/70 sm:inline">
+        · {meta.description}
+      </span>
+    </span>
   );
 }
