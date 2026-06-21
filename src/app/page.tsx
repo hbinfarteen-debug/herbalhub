@@ -9,6 +9,8 @@ import { OnboardingDialog } from "@/components/herbal-hub/onboarding-dialog";
 import { QuestionnaireWizard } from "@/components/herbal-hub/questionnaire-wizard";
 import { LoadingState } from "@/components/herbal-hub/loading-state";
 import { ResultsDisplay } from "@/components/herbal-hub/results-display";
+import { DonateSection } from "@/components/herbal-hub/donate-section";
+import { WhatsAppButton } from "@/components/herbal-hub/whatsapp-button";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import type { Answers, RecommendationResult, UserProfile } from "@/lib/types";
@@ -96,6 +98,7 @@ export default function Home() {
             <Hero onStart={startConsultation} />
             <HowItWorks />
             <StartCTA onStart={startConsultation} />
+            <DonateSection />
           </>
         )}
 
@@ -123,6 +126,9 @@ export default function Home() {
       </main>
 
       <SiteFooter />
+
+      {/* Floating WhatsApp chat button — always visible */}
+      <WhatsAppButton />
 
       {/* Pre-quiz onboarding popup: region + sex + pregnancy */}
       <OnboardingDialog

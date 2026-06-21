@@ -85,3 +85,40 @@ Stage Summary:
 - The AI (z-ai-web-dev-sdk LLM) PRIORITIZES regionally native herbs & foods while still allowing well-known alternatives, and strictly avoids contraindicated herbs during pregnancy/nursing.
 - Results display region + pregnancy-safe badges; fallback path is also region-aware.
 - Lint clean; full flow verified interactive in the browser for both a Zimbabwe-pregnant and a US-male case.
+
+---
+Task ID: 3
+Agent: main (Z.ai Code)
+Task: Enhance herbal blends to use regional spices + forageable weeds (e.g. purslane) with foraging-location notes, allow up to 6-herb "super drink" blends, change contact email to bchangwaz@gmail.com, add a WhatsApp chat button, and add an EcoCash donate button (0775939688 / Barry Changwa).
+
+Work Log:
+- Read previous worklog + current source (types.ts, api/recommend/route.ts, results-display.tsx, site-footer.tsx).
+- Added `whereToFind?: string` to `TeaRecommendation` in `src/lib/types.ts` (foraging-location note for wild ingredients).
+- Updated `src/app/api/recommend/route.ts` prompt:
+  - REGIONAL INGREDIENTS section now explicitly includes SPICES and WILD/FORAGEABLE weeds per macro-region (Southern Africa: purslane, spider plant/nyevhe, blackjack/nchere, dandelion, plantain, stinging nettle, chickweed, wild mint, devil's thorn; South Asia: purslane/kulfa, dandelion, nettle; East Asia: purslane/ma chi xian; Mediterranean: dandelion, mallow, borage, chicory).
+  - Instructs the AI to include at least one wild/forageable plant in each tea blend when safe.
+  - New FORAGING NOTES section requires the `whereToFind` field for any blend with wild plants — naming the plant + its typical habitat so a beginner can locate it.
+  - Teas now allow UP TO 6 herbs/spices per blend ("super drink"); JSON schema updated; instruction favors 4-6 synergistic ingredients.
+  - Fallback `regionalFallbackHerbs` now returns 6-herb blends with forageable plants (e.g. Zimbabwe: Zumbani, Ginger, Rooibos, Purslane, Wild mint, Lemon). Added `regionalForagingNote()` with habitat descriptions per macro-region. Fallback tea renamed to "Super-Blend" with whereToFind populated.
+- Updated `src/components/herbal-hub/results-display.tsx` TeaCard:
+  - Herb section now shows a count label ("Super-blend herbs · 6" when ≥5 herbs).
+  - New "Where to find the wild herbs" card (primary-tinted, MapPin icon) renders `tea.whereToFind` when present.
+- Rebuilt `src/components/herbal-hub/site-footer.tsx` (4-column): Explore / Get in touch (bchangwaz@gmail.com + WhatsApp +263 775 939 688) / Support us (EcoCash card: Barry Changwa / 0775939688 / Donate link). Email changed from hello@herbalhub.ai.
+- Created `src/components/herbal-hub/whatsapp-button.tsx`: floating green WhatsApp FAB (bottom-right, z-50) linking to https://wa.me/263775939688 with a prefilled greeting. Always visible across all stages.
+- Created `src/components/herbal-hub/donate-section.tsx`: "Keep the kettle brewing" donate section with an EcoCash card showing Account name (Barry Changwa) + EcoCash number (0775939688), a copy-to-clipboard button (with Copied! state), a "Donate to Barry" button (tel: link), and *153# dial instructions.
+- Wired into `src/app/page.tsx`: DonateSection added to intro stage (after StartCTA); WhatsAppButton rendered globally (always visible).
+- `bun run lint` — clean (0 errors, 0 warnings).
+- API verified with Zimbabwe + male + dry cough: AI returned 3 teas each with 6 herbs including forageable weeds (zumbani, blackjack/Bidens pilosa, purslane, wild mint) AND whereToFind notes ("Zumbani grows wild in bushlands and savannah; wild ginger found in forested areas and riverbanks; blackjack grows abundantly as a weed in disturbed soils, gardens, and roadsides after rains").
+- Browser-verified end-to-end with Agent Browser:
+  - Home: donate section ("Keep the kettle brewing", EcoCash, Barry Changwa, 0775939688, *153# instructions), footer (bchangwaz@gmail.com, WhatsApp link, EcoCash card), floating WhatsApp button all present.
+  - Copy-to-clipboard button works (shows "Copied!").
+  - Full Zimbabwe + Male flow → results show "SUPER-BLEND HERBS · 6" + "WHERE TO FIND THE WILD HERBS" cards with foraging notes + Region: Zimbabwe badge.
+  - WhatsApp floating button visible on results page too.
+  - No console errors/warnings; dev.log shows POST /api/recommend 200 (~18s), no server errors.
+
+Stage Summary:
+- Herbal tea blends now combine up to 6 regional herbs + spices + wild forageable weeds (purslane, zumbani, blackjack, dandelion, nettle, etc.), each with a practical foraging-location note so users can find the wild plants in nature.
+- Contact email changed to bchangwaz@gmail.com.
+- Floating WhatsApp chat button (wa.me/263775939688) on every screen.
+- Donate section + footer EcoCash card for 0775939688 / Barry Changwa with copy + dial instructions.
+- Lint clean; full flow verified in browser.

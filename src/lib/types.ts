@@ -45,11 +45,14 @@ export interface UserProfile {
 
 export interface TeaRecommendation {
   name: string;
+  /** Up to 6 herbs/spices — a "super drink" blend */
   herbs: string[];
   benefits: string;
   preparation: string;
   bestTime: string;
   caution?: string;
+  /** Where to forage or source the wild/weed herbs in the blend, e.g. "Purslane grows as a low spreading weed in cultivated beds and disturbed soil; dandelion along field edges." Omit if all ingredients are store-bought. */
+  whereToFind?: string;
 }
 
 export interface MealRecommendation {

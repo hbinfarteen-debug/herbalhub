@@ -113,9 +113,16 @@ Your job: given a person's full wellness profile AND their regional + biological
 REGIONAL INGREDIENTS (IMPORTANT):
 - The person lives in ${profile.region}${
     profile.macroRegion ? ` (${profile.macroRegion})` : ""
-  }. PRIORITIZE herbs, teas, and foods that are native to or commonly available in that region and its cuisine.
-- For each tea and meal, prefer locally rooted ingredients first. For example, for Southern Africa think zumbani (Lippia javanica), moringa, rooibos, African potato, sorghum, millet (rapoko/ragi), sweet potato leaves, baobab; for South Asia think tulsi, ginger, turmeric, cardamom, ashwagandha, curry leaf; for East Asia think goji, jujube, chrysanthemum, astragalus, ginger; for the Mediterranean think chamomile, sage, thyme, olive leaf, fennel.
+  }. PRIORITIZE herbs, spices, weeds, and foods that are native to or commonly available in that region and its cuisine — including wild forageable plants that grow freely in nature.
+- For each tea and meal, prefer locally rooted ingredients first. For example, for Southern Africa think zumbani (Lippia javanica), moringa, rooibos, African potato, sorghum, millet (rapoko/ragi), sweet potato leaves, baobab, AND common wild/forageable plants like purslane (pursley/tsonga greens), spider plant (nyevhe/ulude), blackjack (nchere), dandelion, plantain (broadleaf weed), stinging nettle, chickweed, wild mint, devil's thorn; for South Asia think tulsi, ginger, turmeric, cardamom, ashwagandha, curry leaf, AND forageables like purslane (kulfa/luni), dandelion, nettle; for East Asia think goji, jujube, chrysanthemum, astragalus, ginger, AND purslane (ma chi xian); for the Mediterranean think chamomile, sage, thyme, olive leaf, fennel, AND wild forageables like dandelion, mallow (malva), borage, chicory.
+- SPICES count as herbs for tea blends — use regional warming spices (ginger, cinnamon, clove, cardamom, black pepper, turmeric, etc.) where they fit the person's condition.
+- Include at least one wild/forageable plant in each tea blend whenever a safe, effective one exists for the region and condition. These "weed" plants are often the most accessible medicine.
 - You MAY include a well-known non-regional herb if it is especially effective, but always note where it's from and offer a local alternative. Never make a person feel their local pantry is insufficient.
+
+FORAGING NOTES (whereToFind):
+- For every tea blend that includes a wild or forageable plant, fill the "whereToFind" field with a short, practical note on WHERE in nature to find each forageable ingredient (e.g. "Purslane grows as a low spreading weed in cultivated beds, garden edges and disturbed soil after rain; dandelion along field margins and lawns; wild mint near streams and damp ditches").
+- Name the plant AND its typical habitat so a beginner can locate it. Mention a safe look-alike warning ONLY if genuinely needed.
+- If ALL ingredients in a blend are store-bought/cultivated (no wild plants), set whereToFind to null or omit it.
 
 SEX & PREGNANCY SAFETY:
 - Tailor hormone-, cycle-, and prostate-relevant herbs to the stated biological sex where useful.
@@ -141,11 +148,12 @@ You MUST respond with a single valid JSON object and nothing else — no markdow
   "teas": [
     {
       "name": "Tea blend name (evocative, may reference local tradition)",
-      "herbs": ["herb 1", "herb 2", "herb 3"],
+      "herbs": ["up to 6 herbs/spices — a 'super drink' blend blending cultivated + wild forageable plants from the region"],
       "benefits": "Why this tea for this person, tied to their profile, region and (if relevant) pregnancy safety",
       "preparation": "Clear, step-by-step brewing instructions with amounts and steep time, using accessible local ingredients",
       "bestTime": "When in the day to drink it",
-      "caution": "Any relevant caution, interaction, or pregnancy note, or null"
+      "caution": "Any relevant caution, interaction, or pregnancy note, or null",
+      "whereToFind": "Short practical foraging note: where in nature to find each WILD ingredient in the blend (habitat + when). null or omitted if all ingredients are store-bought."
     }
   ],
   "meals": [
@@ -167,7 +175,7 @@ You MUST respond with a single valid JSON object and nothing else — no markdow
   "disclaimer": "A one-line reminder that this is educational, not medical advice, tailored to their case"
 }
 
-Provide 2-3 teas, 2-3 meals, and 3-4 wellness tips. Every field is required (caution may be null). Output ONLY the JSON.`;
+Provide 2-3 teas, 2-3 meals, and 3-4 wellness tips. Each tea blend may use up to 6 herbs/spices to form a potent "super drink" — favor 4-6 ingredients when they work synergistically. Every field is required (caution and whereToFind may be null). Output ONLY the JSON.`;
 
   const user = `Here is the person's context gathered before the quiz:
 
@@ -228,17 +236,18 @@ function fallbackResult(
       "We couldn't reach the herbalist AI just now, but here's a gentle, safe starting point you can build on. Please try again shortly for a fully personalized blend.",
     teas: [
       {
-        name: `${profile.region} Comfort Infusion`,
+        name: `${profile.region} Comfort Super-Blend`,
         herbs: regionalHerbs,
-        benefits: `A soothing baseline for ${concern}, using herbs common in ${profile.region} — gentle on the nervous system and easy to digest.`,
+        benefits: `A soothing 6-herb baseline for ${concern}, blending cultivated and wild-forageable plants common in ${profile.region} — gentle on the nervous system and easy to digest.`,
         preparation:
-          "Steep 1 tsp of the blend in 250ml just-boiled water for 8–10 minutes, covered. Strain and sip warm.",
-        bestTime: "Evening, or whenever symptoms flare",
+          "Steep 1 heaped tsp of the blend in 300ml just-boiled water for 10–12 minutes, covered. Strain and sip warm. Drink 2–3 cups through the day.",
+        bestTime: "Morning and evening, or whenever symptoms flare",
         caution: isPregnant
           ? "Pregnancy: this gentle blend avoids uterine stimulants, but confirm any herb with your midwife or doctor."
           : isNursing
             ? "Nursing: skip large amounts of peppermint/sage, which can reduce milk supply."
             : "Skip if allergic to any ingredient.",
+        whereToFind: regionalForagingNote(profile.region),
       },
     ],
     meals: [
@@ -275,18 +284,35 @@ function fallbackResult(
 function regionalFallbackHerbs(region: string): string[] {
   const r = region.toLowerCase();
   if (r.includes("zimbabwe") || r.includes("south africa") || r.includes("botswana") || r.includes("zambia") || r.includes("malawi") || r.includes("mozambique") || r.includes("namibia"))
-    return ["Zumbani (Lippia javanica)", "Ginger", "Rooibos"];
+    return ["Zumbani (Lippia javanica)", "Ginger", "Rooibos", "Purslane (wild)", "Wild mint", "Lemon"];
   if (r.includes("india") || r.includes("pakistan") || r.includes("bangladesh") || r.includes("sri lanka") || r.includes("nepal"))
-    return ["Tulsi (holy basil)", "Ginger", "Lemongrass"];
+    return ["Tulsi (holy basil)", "Ginger", "Turmeric", "Purslane (kulfa)", "Lemongrass", "Black pepper"];
   if (r.includes("china") || r.includes("japan") || r.includes("korea") || r.includes("taiwan"))
-    return ["Ginger", "Jujube (red date)", "Chrysanthemum"];
+    return ["Ginger", "Jujube (red date)", "Chrysanthemum", "Purslane (ma chi xian)", "Goji berry", "Green tea"];
   if (r.includes("nigeria") || r.includes("ghana") || r.includes("senegal") || r.includes("cameroon") || r.includes("kenya") || r.includes("tanzania") || r.includes("uganda") || r.includes("ethiopia"))
-    return ["Ginger", "Moringa leaf", "Lemongrass"];
+    return ["Ginger", "Moringa leaf", "Lemongrass", "Scent leaf (basil)", "Purslane (wild)", "Cloves"];
   if (r.includes("turkey") || r.includes("iran") || r.includes("morocco") || r.includes("egypt") || r.includes("lebanon"))
-    return ["Chamomile", "Rosehip", "Mint"];
+    return ["Chamomile", "Rosehip", "Mint", "Dandelion (wild)", "Cinnamon", "Ginger"];
   if (r.includes("mexico") || r.includes("brazil") || r.includes("argentina") || r.includes("peru") || r.includes("colombia"))
-    return ["Chamomile (manzanilla)", "Ginger", "Lemongrass"];
-  return ["Chamomile", "Ginger", "Lemon balm"];
+    return ["Chamomile (manzanilla)", "Ginger", "Lemongrass", "Purslane (verdolaga)", "Cinnamon", "Lime"];
+  return ["Chamomile", "Ginger", "Lemon balm", "Dandelion (wild)", "Nettle (wild)", "Honey"];
+}
+
+function regionalForagingNote(region: string): string {
+  const r = region.toLowerCase();
+  if (r.includes("zimbabwe") || r.includes("south africa") || r.includes("botswana") || r.includes("zambia") || r.includes("malawi") || r.includes("mozambique") || r.includes("namibia"))
+    return "Purslane grows as a low, fleshy-leaved weed in cultivated beds, garden edges and disturbed soil after rain — look for reddish stems and paddle-shaped leaves. Wild mint flourishes along stream banks and damp ditches. Zumbani (Lippia javanica) is a common wild shrub in grasslands and fallow fields, harvest the leaves in the dry season.";
+  if (r.includes("india") || r.includes("pakistan") || r.includes("bangladesh") || r.includes("sri lanka") || r.includes("nepal"))
+    return "Purslane (kulfa/luni) grows as a low spreading weed in vegetable beds and moist ground after monsoon. Lemongrass is often cultivated in home gardens. Tulsi grows in many courtyards and temple gardens.";
+  if (r.includes("china") || r.includes("japan") || r.includes("korea") || r.includes("taiwan"))
+    return "Purslane (ma chi xian) grows as a low succulent weed in gardens, field edges and sidewalk cracks in summer. Chrysanthemum and goji are commonly cultivated; jujube (red date) from trees in late autumn.";
+  if (r.includes("nigeria") || r.includes("ghana") || r.includes("senegal") || r.includes("cameroon") || r.includes("kenya") || r.includes("tanzania") || r.includes("uganda") || r.includes("ethiopia"))
+    return "Purslane grows as a creeping weed in cultivated beds and market-garden edges after rain. Scent leaf (African basil) is widely grown around homes. Moringa leaves from trees common in homesteads.";
+  if (r.includes("turkey") || r.includes("iran") || r.includes("morocco") || r.includes("egypt") || r.includes("lebanon"))
+    return "Dandelion grows wild in lawns, field margins and roadsides — the leaves and roots are both usable. Chamomile and mint are often cultivated in home gardens. Rosehip from wild rose bushes in autumn.";
+  if (r.includes("mexico") || r.includes("brazil") || r.includes("argentina") || r.includes("peru") || r.includes("colombia"))
+    return "Purslane (verdolaga) grows as a low spreading weed in vegetable gardens and moist fields. Manzanilla (chamomile) is cultivated in home gardens. Lemongrass in backyard patches.";
+  return "Dandelion grows wild in lawns, field margins and roadsides. Nettle flourishes in rich, damp soil at woodland edges and stream banks — wear gloves to harvest. Lemon balm is often found in herb gardens.";
 }
 
 function regionalFallbackMeal(region: string): { name: string; ingredients: string[]; recipe: string } {

@@ -220,17 +220,22 @@ function TeaCard({ tea, index }: { tea: TeaRecommendation; index: number }) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap gap-1.5">
-            {tea.herbs.map((herb) => (
-              <Badge
-                key={herb}
-                variant="secondary"
-                className="border-primary/20 bg-primary/5 font-medium text-primary"
-              >
-                <Leaf className="mr-1 h-3 w-3" />
-                {herb}
-              </Badge>
-            ))}
+          <div>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {tea.herbs.length >= 5 ? "Super-blend herbs" : "Herbs"} · {tea.herbs.length}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {tea.herbs.map((herb) => (
+                <Badge
+                  key={herb}
+                  variant="secondary"
+                  className="border-primary/20 bg-primary/5 font-medium text-primary"
+                >
+                  <Leaf className="mr-1 h-3 w-3" />
+                  {herb}
+                </Badge>
+              ))}
+            </div>
           </div>
 
           <div className="rounded-xl bg-secondary/50 p-3">
@@ -241,6 +246,20 @@ function TeaCard({ tea, index }: { tea: TeaRecommendation; index: number }) {
               {tea.preparation}
             </p>
           </div>
+
+          {tea.whereToFind && tea.whereToFind.trim() && (
+            <div className="flex items-start gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <div>
+                <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-primary">
+                  Where to find the wild herbs
+                </p>
+                <p className="text-sm leading-relaxed text-foreground/90">
+                  {tea.whereToFind}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4 text-primary" />
