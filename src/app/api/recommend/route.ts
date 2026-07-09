@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { QUESTIONS } from "@/lib/questions";
 import type {
   Answers,
@@ -461,14 +461,20 @@ export async function POST(request: Request) {
   const { system, user } = buildPrompt(answers, profile);
 
   try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      systemInstruction: system,
+    const client = new OpenAI({
+      apiKey: process.env.GROQ_API_KEY,
+      baseURL: "https://api.groq.com/openai/v1",
     });
 
-    const result = await model.generateContent(user);
-    const content = result.response.text();
+    const completion = await client.chat.completions.create({
+      model: "qwen-2.5-32b",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+    });
+
+    const content = completion?.choices?.[0]?.message?.content ?? "";
     const parsed = safeParseJson(content);
 
     if (!parsed) {
