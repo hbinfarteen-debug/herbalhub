@@ -31,10 +31,10 @@ export function HowItWorks() {
         <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
           From symptom to sip in three steps
         </h2>
-        <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-          Herbal Hub treats you like a whole person. We don&apos;t just hand you a
-          tea — we understand your context first.
-        </p>
+<p className="mt-4 text-base leading-relaxed text-muted-foreground">
+           Herbal Hub treats you like a whole person. We don&apos;t just hand you a
+           tea we understand your context first.
+         </p>
       </div>
 
       <div className="mt-12 grid gap-6 md:grid-cols-3">
