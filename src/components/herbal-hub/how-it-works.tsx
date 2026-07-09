@@ -82,16 +82,16 @@ function About() {
         <h3 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Old wisdom, new intelligence
         </h3>
-        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-          For thousands of years, herbalists matched plants to people — not just
-          to illnesses. A cup of chamomile for the anxious, ginger for the cold,
+<p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+           For thousands of years, herbalists matched plants to people not just
+           to illnesses. A cup of chamomile for the anxious, ginger for the cold,
           turmeric for the inflamed. Herbal Hub carries that tradition forward
           with an AI that listens to the whole you: your sleep, your stress, your
           diet, your pace of life.
         </p>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           Every recommendation respects your allergies and medications, so the
-          remedies soothe — never clash.
+          remedies soothe and never clash.
         </p>
       </div>
       <div className="relative">
