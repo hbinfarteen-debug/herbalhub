@@ -467,7 +467,7 @@ export async function POST(request: Request) {
     });
 
     const completion = await client.chat.completions.create({
-      model: "qwen-2.5-32b",
+      model: "qwen/qwen3-32b",
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
