@@ -10,7 +10,7 @@ export const QUESTIONS: Question[] = [
     required: true,
     title: "What's the main pain, symptom, or illness you'd like help with?",
     subtitle:
-      "Describe what you're feeling in your own words — the more detail, the better the remedy.",
+      "Describe what you're feeling in your own words, the more detail, the better the remedy.",
     placeholder:
       "e.g. I've had a tension headache behind my eyes and feel jittery…",
   },
