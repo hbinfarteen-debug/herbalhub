@@ -107,10 +107,10 @@ export function OnboardingDialog({
                 Before we begin
               </DialogTitle>
             </div>
-            <DialogDescription className="text-sm leading-relaxed text-muted-foreground">
-              A little context helps us choose herbs and ingredients you can
-              actually find nearby — and keep everything safe for your body.
-            </DialogDescription>
+<DialogDescription className="text-sm leading-relaxed text-muted-foreground">
+               A little context helps us choose herbs and ingredients you can
+               actually find nearby and keep everything safe for your body.
+             </DialogDescription>
           </DialogHeader>
         </div>
 
