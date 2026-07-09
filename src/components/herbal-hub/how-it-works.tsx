@@ -12,7 +12,7 @@ const STEPS = [
   {
     icon: FlaskConical,
     title: "AI brews your blend",
-    body: "Our AI cross-references traditional herbalism with your inputs — allergies, medications, age and severity — to craft teas matched to you.",
+    body: "Our AI cross-references traditional herbalism with your inputs such as allergies, medications, age and severity to craft teas matched to you.",
   },
   {
     icon: Soup,
