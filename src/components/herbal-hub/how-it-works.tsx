@@ -124,7 +124,7 @@ function Disclaimer() {
         <p className="mt-1 text-sm leading-relaxed text-amber-800/90 dark:text-amber-100/80">
           Herbal Hub offers educational, lifestyle-oriented suggestions and is
           not a substitute for professional medical advice. Always consult a
-          qualified healthcare provider for diagnosis and treatment — especially
+          qualified healthcare provider for diagnosis and treatment especially
           if you are pregnant, nursing, on medication, or managing a chronic
           condition.
         </p>
