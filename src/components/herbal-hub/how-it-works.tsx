@@ -7,7 +7,7 @@ const STEPS = [
   {
     icon: MessageSquareHeart,
     title: "Share your story",
-    body: "Answer 9 gentle questions about your symptoms, lifestyle, sleep, diet and more — so we get the full picture, not just the surface ache.",
+    body: "Answer 9 gentle questions about your symptoms, lifestyle, sleep, diet and more so that we get the full picture, not just the surface ache.",
   },
   {
     icon: FlaskConical,
