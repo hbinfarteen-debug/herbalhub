@@ -491,11 +491,11 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json<RecommendApiResponse>({ ok: true, result: parsed });
-  } catch (err) {
+  } catch (err: any) {
     console.error("[recommend] LLM error:", err);
     return NextResponse.json<RecommendApiResponse>({
       ok: false,
-      error: "Sorry, the robots are striking",
+      error: err?.message || "Sorry, the robots are striking",
     });
   }
 }
