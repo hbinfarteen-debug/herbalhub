@@ -44,7 +44,7 @@ export function SupportSection() {
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Herbal Hub is free for everyone. Your support keeps the servers
             running, the AI brewing, and helps bring more projects like this to
-            life — that way plant wisdom stays within everyone&apos;s reach. Every cup
+            life that way plant wisdom stays within everyone&apos;s reach. Every cup
             of gratitude counts.
           </p>
         </div>
