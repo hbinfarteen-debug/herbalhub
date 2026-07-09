@@ -189,7 +189,7 @@ export function OnboardingDialog({
             {detected && detected === region && (
               <p className="mt-1.5 flex items-center gap-1 text-xs text-primary">
                 <MapPin className="h-3 w-3" />
-                Auto-detected from your timezone — change if it&apos;s off.
+                Auto-detected from your timezone, change if it&apos;s off.
               </p>
             )}
           </Field>
