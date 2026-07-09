@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import ZAI from "z-ai-web-dev-sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { QUESTIONS } from "@/lib/questions";
 import type {
   Answers,
@@ -461,23 +461,20 @@ export async function POST(request: Request) {
   const { system, user } = buildPrompt(answers, profile);
 
   try {
-    const zai = await ZAI.create();
-    const completion = await zai.chat.completions.create({
-      messages: [
-        { role: "assistant", content: system },
-        { role: "user", content: user },
-      ],
-      thinking: { type: "disabled" },
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      systemInstruction: system,
     });
 
-    const content = completion?.choices?.[0]?.message?.content ?? "";
+    const result = await model.generateContent(user);
+    const content = result.response.text();
     const parsed = safeParseJson(content);
 
     if (!parsed) {
-      // Surface a graceful fallback so the UX never breaks
       return NextResponse.json<RecommendApiResponse>({
-        ok: true,
-        result: fallbackResult(answers, profile),
+        ok: false,
+        error: "Sorry, the robots are striking",
       });
     }
 
@@ -491,8 +488,8 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[recommend] LLM error:", err);
     return NextResponse.json<RecommendApiResponse>({
-      ok: true,
-      result: fallbackResult(answers, profile),
+      ok: false,
+      error: "Sorry, the robots are striking",
     });
   }
 }
