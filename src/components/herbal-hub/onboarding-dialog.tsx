@@ -199,7 +199,7 @@ export function OnboardingDialog({
             step={2}
             icon={<Heart className="h-4 w-4" />}
             label="What's your biological sex?"
-            hint="Some herbs interact with hormones or pregnancy — this keeps you safe."
+            hint="Some herbs interact with hormones or pregnancy, this keeps you safe."
           >
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
               {SEX_OPTIONS.map((opt) => {
