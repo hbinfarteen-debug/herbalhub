@@ -23,6 +23,7 @@ export default function Home() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [result, setResult] = useState<RecommendationResult | null>(null);
   const [primaryConcern, setPrimaryConcern] = useState("");
+  const [answers, setAnswers] = useState<Answers | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
   const startConsultation = useCallback(() => {
@@ -40,6 +41,7 @@ export default function Home() {
   const handleComplete = useCallback(
     async (answers: Answers) => {
       setPrimaryConcern(answers.primaryConcern?.trim() || "");
+      setAnswers(answers);
       setStage("loading");
       window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -79,10 +81,52 @@ export default function Home() {
     [profile]
   );
 
+  const retryWithSaved = useCallback(async () => {
+    if (!answers || !profile) return;
+    setResult(null);
+    setErrorMsg("");
+    setStage("loading");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    try {
+      const res = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers, profile }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Request failed (${res.status})`);
+      }
+
+      const data = (await res.json()) as {
+        ok: boolean;
+        result?: RecommendationResult;
+        error?: string;
+      };
+
+      if (!data.ok || !data.result) {
+        throw new Error(data.error || "No recommendations returned");
+      }
+
+      setResult(data.result);
+      setStage("results");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      console.error("[herbal-hub] recommend failed:", err);
+      setErrorMsg(
+        err instanceof Error ? err.message : "Something went wrong."
+      );
+      setStage("error");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [answers, profile]);
+
   const restart = useCallback(() => {
     setResult(null);
     setErrorMsg("");
     setPrimaryConcern("");
+    setAnswers(null);
     setProfile(null);
     setStage("intro");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -117,11 +161,12 @@ export default function Home() {
             primaryConcern={primaryConcern}
             profile={profile}
             onRestart={restart}
+            onRetry={answers ? retryWithSaved : undefined}
           />
         )}
 
         {stage === "error" && (
-          <ErrorState message={errorMsg} onRetry={() => setStage("questions")} onHome={restart} />
+          <ErrorState message={errorMsg} onRetry={retryWithSaved} onHome={restart} />
         )}
       </main>
 

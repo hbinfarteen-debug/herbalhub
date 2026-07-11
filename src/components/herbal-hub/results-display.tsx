@@ -64,6 +64,7 @@ interface ResultsDisplayProps {
   primaryConcern: string;
   profile: UserProfile;
   onRestart: () => void;
+  onRetry?: () => void;
 }
 
 export function ResultsDisplay({
@@ -71,6 +72,7 @@ export function ResultsDisplay({
   primaryConcern,
   profile,
   onRestart,
+  onRetry,
 }: ResultsDisplayProps) {
   return (
     <section className="relative">
@@ -168,6 +170,12 @@ export function ResultsDisplay({
 
         {/* Actions */}
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          {onRetry && (
+            <Button onClick={onRetry} className="gap-2 rounded-full">
+              <RotateCcw className="h-4 w-4" />
+              Try again
+            </Button>
+          )}
           <Button
             onClick={onRestart}
             variant="outline"
