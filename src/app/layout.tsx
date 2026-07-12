@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Herbal Hub" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/herbalicon.png",
   },
   openGraph: {
     title: "Herbal Hub — AI Herbal Tea & Meal Remedies",
